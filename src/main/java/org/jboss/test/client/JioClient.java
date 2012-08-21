@@ -160,7 +160,7 @@ public class JioClient extends Thread {
         while ((this.max--) > 0) {
             sleep(this.delay);
             time = System.currentTimeMillis();
-            write("GET /data/file.txt" + CRLF);
+            write("GET /data/file.txt HTTP/1.1" + CRLF);
             response = read();
             time = System.currentTimeMillis() - time;
             // System.out.println("[Thread-" + getId() +
