@@ -42,4 +42,9 @@ download it form maven website:
    * NReq: the total number of requests. This is an optional parameter. Default value: 1000000
    
    
+      Example: install_dir/nio2-xnio3-client$ sh run.sh localhost 8001 100 1000 100000
+   
+   
+
+   
    
