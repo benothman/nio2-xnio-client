@@ -33,17 +33,48 @@ host=$1;
 port=$2
 n=$3;
 delay=$4;
+nReq=$5;
+
+if [ "x$host" = "x" ]; then
+	printf "ERROR: you should provide the hostname\n";
+	exit -1;
+fi
+
+if [ "x$port" = "x" ]; then
+	printf "ERROR: you should provide the port number\n";
+	exit -1;
+fi
+
+if [ "x$n" = "x" ]; then
+	n=1000;
+fi
+
+
+if [ "x$delay" = "x" ]; then
+	delay=1000;
+fi
+
+if [ "x$nReq" = "x" ]; then
+	nReq=1000000;
+fi
+
+
 log_file=$(date +%s)-log.txt
 filename=$n-$delay-$log_file
 printf "Running clients with:\n";
 printf "\tHostname: $host\n";
 printf "\tNumber of clients: $n\n";
-printf "\tDelay: $delay\n";
-printf "\n\t->Log file: $filename\n";
+printf "\tDelay: $delay ms\n";
+printf "\tTotal number requests: $nReq\n";
+printf "\n\t-> Log file: $filename\n";
 
-mvn exec:java -Dexec.mainClass="org.jboss.test.client.JioClient" -Dexec.args="$host $port $n $delay" > $log_file
+mvn exec:java -Dexec.mainClass="org.jboss.test.client.JioClient" -Dexec.args="$host $port $n $delay $nReq" > $log_file
 
-printf "max \t min \t avg\n" > $filename
-cat $log_file | egrep -v '[a-zA-Z]|^\s*$' >> $filename
+#printf "max \t min \t avg\n" > $filename
+#cat $log_file | egrep -v '[a-zA-Z]|^\s*$' >> $filename
+cat $log_file | egrep -v '[a-zA-Z]|^\s*$' >> ~/$n-$delay-$nReq-log.txt
 
-mvn exec:java -Dexec.mainClass="org.jboss.test.client.LogParser" -Dexec.args="$filename"
+#mvn exec:java -Dexec.mainClass="org.jboss.test.client.LogParser" -Dexec.args="$filename"
+
+
+
