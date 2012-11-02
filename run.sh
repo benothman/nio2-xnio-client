@@ -58,21 +58,28 @@ if [ "x$nReq" = "x" ]; then
 	nReq=1000000;
 fi
 
+JAVA_OPTS="-server -Xms512m -Xmx2048m -XX:MaxPermSize=1024m";
+echo ""
+echo "JAVA_OPTS: $JAVA_OPTS"
+echo ""
+
 
 log_file=$(date +%s)-log.txt
-filename=$n-$delay-$log_file
-printf "Running clients with:\n";
-printf "\tHostname: $host\n";
-printf "\tNumber of clients: $n\n";
-printf "\tDelay: $delay ms\n";
-printf "\tTotal number requests: $nReq\n";
+
+prefix=$n-$delay-$nReq
+filename=$prefix-$log_file
+printf "Running test with:\n";
+printf "\tHostname:port = $host:$port\n";
+printf "\tNumber of clients = $n\n";
+printf "\tDelay = $delay ms\n";
+printf "\tTotal number requests = $nReq\n";
 printf "\n\t-> Log file: $filename\n";
 
-mvn exec:java -Dexec.mainClass="org.jboss.test.client.JioClient" -Dexec.args="$host $port $n $delay $nReq" > $log_file
+java $JAVA_OPTS -jar target/nio2-xnio-client.jar $host $port $n $delay $nReq > $log_file
 
 #printf "max \t min \t avg\n" > $filename
-#cat $log_file | egrep -v '[a-zA-Z]|^\s*$' >> $filename
-cat $log_file | egrep -v '[a-zA-Z]|^\s*$' >> ~/$n-$delay-$nReq-log.txt
+egrep -v '[a-zA-Z]|^\s*$' $log_file > $filename
+cat $filename >> ~/$prefix-log.txt
 
 #mvn exec:java -Dexec.mainClass="org.jboss.test.client.LogParser" -Dexec.args="$filename"
 

@@ -152,8 +152,10 @@ public class JioClient extends Thread {
 		// Connect to the server
 		this.connect();
 		write("POST /session-" + getId() + CRLF);
+		System.out.println("READ FROM SERVER");
 		BufferedReader in = new BufferedReader(new InputStreamReader(this.channel.getInputStream()));
 		String response = in.readLine();
+		System.out.println("RECIEVED FROM SERVER : " + response);
 		String tab[] = response.split("\\s+");
 		this.sessionId = tab[1];
 	}
@@ -177,7 +179,9 @@ public class JioClient extends Thread {
 		while ((this.max--) > 0) {
 			sleep(this.delay);
 			time = System.currentTimeMillis();
+			//System.out.println("WRITE TO SERVER");
 			write("GET /data/file.txt?jSessionId=" + this.sessionId + " HTTP/1.1" + CRLF);
+			//System.out.println("READ FROM SERVER");
 			response = read();
 			time = System.currentTimeMillis() - time;
 			delays.add(time);
@@ -228,11 +232,11 @@ public class JioClient extends Thread {
 		byte bytes[] = new byte[READ_BUFFER_SIZE];
 		int nBytes = -1;
 		String tmp = null;
-		int length = CRLF.getBytes().length;
+		int length = CRLF.length();
 		while ((nBytes = this.is.read(bytes)) != -1) {
 			tmp = new String(bytes, nBytes - length, length);
 			if (tmp.equals(CRLF)) {
-				// System.out.println("\n**** CRLF attemped ****");
+				//System.out.println("\n**** CRLF attemped ****");
 				break;
 			}
 		}
