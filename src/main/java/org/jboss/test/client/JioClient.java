@@ -44,42 +44,39 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="mailto:nbenothm@redhat.com">Nabil Benothman</a>
  */
 public class JioClient extends Thread {
-
+	
 	/**
      *
      */
-	public static final int READ_BUFFER_SIZE = 16 * 1024;
+	public static final int				READ_BUFFER_SIZE	= 16 * 1024;
 	/**
      *
      */
-	public static final String CRLF = "\r\n";
+	public static final String			CRLF				= "\r\n";
 	/**
      *
      */
-	public static final int MAX = 1000;
+	public static final int				MAX					= 1000;
 	/**
      *
      */
-	public static int N_THREADS = 100;
+	public static int					N_THREADS			= 100;
 	/**
 	 * Default wait delay 1000ms
 	 */
-	public static final int DEFAULT_DELAY = 1000;
-	public static final int DEFAULT_NREQ = 1000000;
-	private long max_time = Long.MIN_VALUE;
-	private long min_time = Long.MAX_VALUE;
-	private double avg_time = 0;
-	private String hostname;
-	private int port;
-	private int max;
-	private int delay;
-	private Socket channel;
-	private String sessionId;
-	private DataOutputStream dos;
-	private InputStream is;
-	private static final AtomicInteger COUNTER = new AtomicInteger(0);
-	private static final Random RAND = new Random();
-
+	public static final int				DEFAULT_DELAY		= 1000;
+	public static final int				DEFAULT_NREQ		= 1000000;
+	private String						hostname;
+	private int							port;
+	private int							max;
+	private int							delay;
+	private Socket						channel;
+	private String						sessionId;
+	private DataOutputStream			dos;
+	private InputStream					is;
+	private static final AtomicInteger	COUNTER				= new AtomicInteger(0);
+	private static final Random			RAND				= new Random();
+	
 	/**
 	 * Create a new instance of {@code JioClient}
 	 * 
@@ -94,7 +91,7 @@ public class JioClient extends Thread {
 		this.max = d_max;
 		this.delay = delay;
 	}
-
+	
 	/**
 	 * Create a new instance of {@code JioClient}
 	 * 
@@ -105,7 +102,7 @@ public class JioClient extends Thread {
 	public JioClient(String hostname, int port, int delay) {
 		this(hostname, port, 55 * 1000 / delay, delay);
 	}
-
+	
 	@Override
 	public void run() {
 		try {
@@ -115,7 +112,7 @@ public class JioClient extends Thread {
 			while (COUNTER.get() < N_THREADS) {
 				sleep(100);
 			}
-
+			
 			// wait for 2 seconds until all threads are ready
 			sleep(2 * DEFAULT_DELAY);
 			runit();
@@ -125,12 +122,11 @@ public class JioClient extends Thread {
 			try {
 				this.channel.close();
 			} catch (IOException ioex) {
-				System.err.println("Exception: " + ioex.getMessage());
-				ioex.printStackTrace();
+				// NOPE
 			}
 		}
 	}
-
+	
 	/**
 	 * 
 	 * @throws Exception
@@ -143,13 +139,14 @@ public class JioClient extends Thread {
 		this.is = this.channel.getInputStream();
 		COUNTER.incrementAndGet();
 	}
-
+	
 	/**
 	 * 
 	 * @throws Exception
 	 */
 	protected void init() throws Exception {
 		// Connect to the server
+		sleep(RAND.nextInt(5000));
 		this.connect();
 		write("POST /session-" + getId() + CRLF);
 		System.out.println("READ FROM SERVER");
@@ -159,60 +156,32 @@ public class JioClient extends Thread {
 		String tab[] = response.split("\\s+");
 		this.sessionId = tab[1];
 	}
-
+	
 	/**
 	 * 
 	 * @throws Exception
 	 */
 	public void runit() throws Exception {
-		Random random = new Random();
 		// Wait a delay to ensure that all threads are ready
-		sleep(DEFAULT_DELAY + random.nextInt(500));
+		sleep(DEFAULT_DELAY + (new Random()).nextInt(COUNTER.get()));
 		long time = 0;
 		String response = null;
-		int counter = 0;
-		int min_count = 10 * 1000 / delay;
-		int max_count = 50 * 1000 / delay;
-
-		List<Long> delays = new ArrayList<Long>();
-
+		List<Integer> delays = new ArrayList<Integer>();
+		
 		while ((this.max--) > 0) {
 			sleep(this.delay);
 			time = System.currentTimeMillis();
-			//System.out.println("WRITE TO SERVER");
 			write("GET /data/file.txt?jSessionId=" + this.sessionId + " HTTP/1.1" + CRLF);
-			//System.out.println("READ FROM SERVER");
 			response = read();
 			time = System.currentTimeMillis() - time;
-			delays.add(time);
-
-			/*
-			 * if (counter >= min_count && counter <= max_count) {
-			 * // update the average response time
-			 * avg_time += time;
-			 * // update the maximum response time
-			 * if (time > max_time) {
-			 * max_time = time;
-			 * }
-			 * // update the minimum response time
-			 * if (time < min_time) {
-			 * min_time = time;
-			 * }
-			 * }
-			 */
-			counter++;
+			delays.add((int) time);
 		}
-		avg_time /= (max_count - min_count + 1);
-		// For each thread print out the maximum, minimum and average response
-		// times
-		// System.out.println(max_time + " \t " + min_time + " \t " + avg_time);
-
-		for (long d : delays) {
+		
+		for (int d : delays) {
 			System.out.println(d);
 		}
-
 	}
-
+	
 	/**
 	 * 
 	 * @param data
@@ -222,7 +191,7 @@ public class JioClient extends Thread {
 		this.dos.write(data.getBytes());
 		this.dos.flush();
 	}
-
+	
 	/**
 	 * 
 	 * @return data received from server
@@ -231,25 +200,25 @@ public class JioClient extends Thread {
 	public String read() throws Exception {
 		byte bytes[] = new byte[READ_BUFFER_SIZE];
 		int nBytes = -1;
-		String tmp = null;
-		int length = CRLF.length();
+		long n = 0;
 		while ((nBytes = this.is.read(bytes)) != -1) {
-			tmp = new String(bytes, nBytes - length, length);
-			if (tmp.equals(CRLF)) {
-				//System.out.println("\n**** CRLF attemped ****");
+			n += nBytes;
+			if (nBytes >= 2 && bytes[nBytes - 1] == '\n' && bytes[nBytes - 2] == '\r') {
+				// System.out.println("\n**** CRLF attemped ****");
 				break;
 			}
 		}
+		
 		return "Hello world!";
 	}
-
+	
 	/**
 	 * 
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-
+		
 		if (args.length < 2) {
 			System.err.println("Usage: java " + JioClient.class.getName()
 					+ " hostname port [n] [delay] [nReq]");
@@ -260,7 +229,7 @@ public class JioClient extends Thread {
 			System.err.println("\tnReq: The total number of requests. (default is 1000000)");
 			System.exit(1);
 		}
-
+		
 		String hostname = args[0];
 		int port = Integer.parseInt(args[1]);
 		int n = 100, delay = DEFAULT_DELAY, nReq = DEFAULT_NREQ;
@@ -271,7 +240,7 @@ public class JioClient extends Thread {
 					throw new IllegalArgumentException(
 							"Number of threads may not be less than zero");
 				}
-
+				
 				if (args.length > 3) {
 					delay = Integer.parseInt(args[3]);
 					if (delay < 1) {
@@ -284,7 +253,7 @@ public class JioClient extends Thread {
 						throw new IllegalArgumentException(
 								"Negative value for number of requests: " + nReq);
 					}
-
+					
 					if (nReq < n) {
 						System.err.println("EhRROR: you should have nReq >= n");
 						System.err.println("Adjusting nReq to " + n);
@@ -296,28 +265,28 @@ public class JioClient extends Thread {
 				System.exit(1);
 			}
 		}
-
+		
 		N_THREADS = n;
-
+		
 		System.out.println("\n Running test with parameters:");
 		System.out.println("\tHostname: " + hostname);
 		System.out.println("\tPort: " + port);
 		System.out.println("\tn: " + n);
 		System.out.println("\tdelay: " + delay);
 		System.out.println("\tnReq: " + nReq);
-
+		
 		JioClient clients[] = new JioClient[n];
-
+		
 		int nReqClient = nReq / n;
-
+		
 		for (int i = 0; i < clients.length; i++) {
 			clients[i] = new JioClient(hostname, port, nReqClient, delay);
 		}
-
+		
 		for (int i = 0; i < clients.length; i++) {
 			clients[i].start();
 		}
-
+		
 		for (int i = 0; i < clients.length; i++) {
 			clients[i].join();
 		}
